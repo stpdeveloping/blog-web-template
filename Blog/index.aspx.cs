@@ -20,8 +20,9 @@ namespace Blog
         }
         public static bool Crud(string query)
         {
-                string con = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\Seshsadboy\\source\\repos\\Blog\\Blog\\App_Data\\Database1.mdf;Integrated Security=True";
-            using (SqlConnection connection = new SqlConnection(con))
+      string con = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\Seshsadboy\\source\\repos\\Blog\\Blog\\App_Data\\Database1.mdf;Integrated Security=True";
+      string con2 = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\RapForLife\\Source\\Repos\\webapi\\Blog\\App_Data\\Database1.mdf;Integrated Security=True";
+            using (SqlConnection connection = new SqlConnection(con2))
             {
                 connection.Open();
                 using (SqlCommand cmd = new SqlCommand(query, connection))
