@@ -110,5 +110,10 @@ namespace Blog
                     break;
             }
         }
+        [WebMethod]
+        public static void artykul(string Tytul, string Podtytul, string[] Links_arr, string Tresc)
+        {
+            
+        }
     }
 }

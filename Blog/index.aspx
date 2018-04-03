@@ -15,6 +15,10 @@
                 $("li").removeClass("is-active");
                 $(this).addClass("is-active");
             });
+            $(".artIMG").click(function () {
+                $(".artIMG").addClass("is-128x128");
+                $(this).removeClass("is-128x128");
+            });
             $.ajax({
             type: "POST",
             url: "index.aspx/SprawdzenieSesji",
@@ -35,12 +39,27 @@
                     $('#pan1').append("<input class='input is-small is-rounded' id='pass' type='password' placeholder='Hasło...' />");
                     $('#pan2').append("<div class='button is-info is-small' onclick='logowanie()'>Zaloguj</div>");
                 }
+                switch (response.d[1]) {
+                    case "admin":
+                        break;
+                    case "user":
+                        break;
+                }
                 switch (response.d[2]) {
                     case 'o-mnie':
+                        $("li").removeClass("is-active");
+                        $('#menu1').addClass("is-active");
                         oMnie();
                         break;
                     case 'newsy':
-                        //Newsy();
+                        $("li").removeClass("is-active");
+                        $('#menu2').addClass("is-active");
+                        $(".delete").hide();
+                        Newsy();
+                        if (response.d[1] == "admin") {
+                            $('#contentStrony').append("<div class='button is-info' onclick='nowyNews()'>Nowy artykuł...</div>");
+                            $(".delete").show();
+                        }
                         break;
                     case 'cpu-rank':
                         //RankingCPU();
@@ -49,8 +68,25 @@
                         //RankingGPU();
                         break;
                     case 'reg':
-                        Rejestracja();
-                        break;
+                        if (response.d[0] != null) {
+                            $("li").removeClass("is-active");
+                            $('#menu2').addClass("is-active");
+                            $("#menu3").hide();
+                            $(".delete").hide();
+                            Newsy();
+                            if (response.d[1] == "admin") {
+                                $('#contentStrony').append("<div class='button is-info' onclick='nowyNews()'>Nowy artykuł...</div>");
+                                $(".delete").show();
+                            }
+                            break;
+                        }
+                        else {
+                            $("li").removeClass("is-active");
+                            $('#menu3').show();
+                            $('#menu3').addClass("is-active");
+                            Rejestracja();
+                            break;
+                        }
                 }
             }
         });
@@ -71,6 +107,10 @@
                 "<p class='has-text-centered'><img src='http://oi65.tinypic.com/zmjos2.jpg' /></p>" +
                 "<p>Witam na mojej stronie. Jestem studentem VI semestru na WSTI i pochodzę z Katowic. " +
                 "Zamieszczam tu nowinki ze świata podzespołów komputerowych.</p></section>");
+        }
+        function Newsy() {
+            ajaxNumerStrony(2);
+            $('#contentStrony').empty();
         }
         function Rejestracja() {
             ajaxNumerStrony(5);
@@ -177,6 +217,69 @@
                 location.reload();
             }
         }
+        function nowyNews() {
+            $("#contentStrony").empty();
+            $('#contentStrony').append($("<div class='container' id='main'>")
+                .append($("<div class='field'>")
+                    .append("<label class='label'>Tytuł</label>")
+                    .append($("<div class='control'>")
+                        .append($("<input class='input' type='text' id='naglowek'>"))
+                    )
+            )
+                .append($("<div class='field'>")
+                .append("<label class='label'>Podtytuł</label>")
+                .append($("<div class='control'>")
+                    .append($("<input class='input' type='text' id='sub-naglowek'>"))
+                )
+            )
+            );
+            $('#main').append($("<div class='field has-addons'>")
+                .append($("<div class='control'>")
+                    .append($("<input class='input' type='text' placeholder='Link do obrazka...' id='link'>"))
+            )
+                .append($("<div class='control'>")
+                    .append("<a class='button is-info' onclick='dodajLink()'>Załącz</a>"))
+                .append($("<ul id='lista_linkow'>"))
+            );
+            $('#main').append($("<div class='field'>")
+                .append("<label class='label'>Treść</label>")
+                .append($("<p class='control'>")
+                    .append($("<textarea class='textarea' id='cont'>"))
+                )
+            )
+                .append($("<div class='field'>")
+                    .append($("<p class='control'>")
+                        .append("<button class='button is-info' onclick='zatwierdzenie()'>Zatwierdź</button>"))
+            );
+            $('#main').wrap($("<section class='section'>"));
+
+        }
+        function dodajLink() {
+            var input_link = $('#link').val();
+            $("#lista_linkow").append("<li class='element'>" + input_link + "</li>");
+        }
+        function zatwierdzenie() {
+            var input_tytul = $('#naglowek').val();
+            var input_subtytul = $('#sub-naglowek').val();
+            var input_links = [];
+            $('.element').each(function () {
+                input_links.push(this.innerHTML);
+            });
+            input_links = JSON.stringify(input_links);
+            var input_artcl = $('#cont').val();
+            $.ajax({
+                type: "POST",
+                url: "index.aspx/artykul",
+                data: '{"Tytul":"' + input_tytul + '", "Podtytul":"' + input_subtytul + '", "Links_arr":' + input_links + ', "Tresc":"' + input_artcl + '"}',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: OnSuccess
+            });
+            function OnSuccess(response) {
+                alert(response.d);
+            }
+        }
+
     </script>
 </head>
 <body>
@@ -201,18 +304,67 @@
 
         <div class="tabs">
   <ul>
-    <li onclick="oMnie()"><a>O mnie</a></li>
-    <li onclick="Newsy()"><a>Newsy</a></li>
+    <li onclick="oMnie()" id="menu1"><a>O mnie</a></li>
+    <li onclick="Newsy()" id="menu2"><a>Newsy</a></li>
     <li onclick="rankingCPU()"><a>Ranking CPU</a></li>
     <li onclick="rankingGPU()"><a>Ranking GPU</a></li>
-    <li onclick="Rejestracja()"><a>Rejestracja</a></li>
+    <li onclick="Rejestracja()" id="menu3"><a>Rejestracja</a></li>
   </ul>
 </div>
             <section class="content" id="contentStrony">
+                <div class='button is-info' onclick='nowyNews()'>Nowy artykuł...</div>
                 <section class="section">
-                    <div class="kontener">
-                        </div>
-                </section>
+    <div class="container">
+      <h2 class="title"><a class="delete"></a> News #1</h2>
+      <h5 class="subtitle">
+        Przykładowy news na tej stronie.
+      </h5>
+        <nav class="level">
+            <div class="level-left">
+            <div class="level-item">
+                <figure class ="image is-128x128 artIMG">
+                <img src="http://www.dailymobile.net/wp-content/uploads/wallpapers/android-640x480-wallpapers/android-640x480-wallpaper-4589.jpg" />
+                </figure>
+            </div>
+            <div class="level-item">
+                <figure class ="image is-128x128 artIMG">
+                <img src="http://www.dailymobile.net/wp-content/uploads/wallpapers/android-640x480-wallpapers/android-640x480-wallpaper-4589.jpg" />
+                </figure>
+            </div>
+            </div>
+        </nav>
+        <p>xxxxxxxxxxxxxxxxx</p>
+        <article class="media">
+             <div class="media-content">
+    <div class="field">
+      <p class="control">
+        <textarea class="textarea"></textarea>
+      </p>
+    </div>
+    <div class="field">
+      <p class="control">
+        <button class="button is-info">Napisz komentarz</button>
+      </p>
+    </div>
+  </div>
+        </article>
+        <article class="media">
+             <div class="media-content">
+    <div class="content">
+      <p>
+        <strong>user</strong> <small>09.09.2009</small>
+        <br>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ornare magna eros, eu pellentesque tortor vestibulum ut. Maecenas non massa sem. Etiam finibus odio quis feugiat facilisis.
+      </p>
+    </div>
+</div>
+            <div class="media-right">
+    <button class="delete"></button>
+  </div>
+
+        </article>
+    </div>
+  </section>
 </section>
          </section>
 
