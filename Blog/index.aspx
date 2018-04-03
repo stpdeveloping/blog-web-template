@@ -323,12 +323,12 @@
             <div class="level-left">
             <div class="level-item">
                 <figure class ="image is-128x128 artIMG">
-                <img src="http://www.dailymobile.net/wp-content/uploads/wallpapers/android-640x480-wallpapers/android-640x480-wallpaper-4589.jpg" />
+                <img src="http://tremendouswallpapers.com/wp-content/uploads/2015/07/Two-moons-hd-wallpaper-for-background-image-hd-wallpaper-640x480-11-542310e71510d-2794.jpg" />
                 </figure>
             </div>
             <div class="level-item">
                 <figure class ="image is-128x128 artIMG">
-                <img src="http://www.dailymobile.net/wp-content/uploads/wallpapers/android-640x480-wallpapers/android-640x480-wallpaper-4589.jpg" />
+                <img src="http://tremendouswallpapers.com/wp-content/uploads/2015/07/Two-moons-hd-wallpaper-for-background-image-hd-wallpaper-640x480-11-542310e71510d-2794.jpg" />
                 </figure>
             </div>
             </div>
