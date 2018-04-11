@@ -15,10 +15,10 @@
                 $("li").removeClass("is-active");
                 $(this).addClass("is-active");
             });
-            $(".artIMG").click(function () {
+            /*$(".artIMG").click(function () {
                 $(".artIMG").addClass("is-128x128");
                 $(this).removeClass("is-128x128");
-            });
+            });*/
             $.ajax({
             type: "POST",
             url: "index.aspx/SprawdzenieSesji",
@@ -39,12 +39,6 @@
                     $('#pan1').append("<input class='input is-small is-rounded' id='pass' type='password' placeholder='Hasło...' />");
                     $('#pan2').append("<div class='button is-info is-small' onclick='logowanie()'>Zaloguj</div>");
                 }
-                switch (response.d[1]) {
-                    case "admin":
-                        break;
-                    case "user":
-                        break;
-                }
                 switch (response.d[2]) {
                     case 'o-mnie':
                         $("li").removeClass("is-active");
@@ -54,12 +48,7 @@
                     case 'newsy':
                         $("li").removeClass("is-active");
                         $('#menu2').addClass("is-active");
-                        $(".delete").hide();
                         Newsy();
-                        if (response.d[1] == "admin") {
-                            $('#contentStrony').append("<div class='button is-info' onclick='nowyNews()'>Nowy artykuł...</div>");
-                            $(".delete").show();
-                        }
                         break;
                     case 'cpu-rank':
                         //RankingCPU();
@@ -72,12 +61,7 @@
                             $("li").removeClass("is-active");
                             $('#menu2').addClass("is-active");
                             $("#menu3").hide();
-                            $(".delete").hide();
                             Newsy();
-                            if (response.d[1] == "admin") {
-                                $('#contentStrony').append("<div class='button is-info' onclick='nowyNews()'>Nowy artykuł...</div>");
-                                $(".delete").show();
-                            }
                             break;
                         }
                         else {
@@ -99,6 +83,19 @@
             dataType: "json"
             });
         }
+        function usunArtykul(artid) {
+            $.ajax({
+                    type: "POST",
+                    url: "index.aspx/UsuwanieArtykulu",
+                    data: '{"art_id":"' + artid + '"}',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: OnSuccess
+            });
+            function OnSuccess() {
+                location.reload();
+            }
+        }
         function oMnie() {
             ajaxNumerStrony(1);
             $("#contentStrony").text("");
@@ -109,9 +106,99 @@
                 "Zamieszczam tu nowinki ze świata podzespołów komputerowych.</p></section>");
         }
         function Newsy() {
-            ajaxNumerStrony(2);
-            $('#contentStrony').empty();
+            $.ajax({
+            type: "POST",
+            url: "index.aspx/SprawdzenieSesji",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: OnSuccess
+            });
+            function OnSuccess(response) {
+                if (response.d[0] == null)
+                    uprawnienia = 0;
+                if (response.d[1] == "user")
+                    uprawnienia = 1;
+                if (response.d[1] == "admin")
+                    uprawnienia = 2;
+                $.ajax({
+                    type: "POST",
+                    url: "index.aspx/WczytanieArtykulow",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: OnSuccess
+                });
+                function OnSuccess(response) {
+                    arrobj = JSON.parse(response.d);
+                    ajaxNumerStrony(2);
+                    $('#contentStrony').empty();
+                    if (uprawnienia == 2)
+                        $('#contentStrony').append("<div class='button is-info' onclick='nowyNews()'>Nowy artykuł...</div>");
+                    for (i = 0; i < arrobj.length; i++) {
+                        $('#contentStrony').append($("<div class='container' id ='ART" + i + "'>"));
+                        if (uprawnienia == 2)
+                            $('#ART' + i).append("<h2 class='title'><button class='delete' onclick='usunArtykul(" + arrobj[i].artid + ")'></button> " + arrobj[i].tit + "</h2>");
+                        else
+                        $('#ART' + i).append("<h2 class='title'>" + arrobj[i].tit + "</h2>");
+                        $('#ART' + i).append("<h5 class='subtitle'>" + arrobj[i].subtit + "</h5>");
+                        var img_parsed = "";
+                        if (arrobj[i].linksarr[0] != null) {
+                            for (x = 0; x < arrobj[i].linksarr.length; x++) {
+                                var img = arrobj[i].linksarr[x];
+                                img_parsed += "<div class='level-item'><figure class ='image artIMG'><img src='" + img + "' /></figure></div>";
+                            }
+                            $('#ART' + i).append($("<nav class='level'>")
+                                .append($("<div class='level-left'>").append(img_parsed))
+                            );
+                        }
+                        $('#ART' + i).append("<p>" + arrobj[i].cont + "</p>");
+                        if (uprawnienia != 0) {
+                            $('#ART' + i).append($("<article class='media'>")
+                                .append($("<div class='media-content' id='mediacont" + i + "'>")
+                                    .append($("<div class='field'>")
+                                        .append($("<p class='control'>")
+                                            .append("<textarea class='textarea' id='com" + arrobj[i].artid + "'></textarea > ")
+                                        )
+                                    )
+                                )
+                            );
+                            $('#mediacont' + i).append($("<div class='field'>")
+                                .append($("<p class='control'>")
+                                    .append("<button class='button is-info' onclick='nowyKomentarz(" + arrobj[i].artid + ")'>Napisz komentarz</button>")
+                                )
+                            );
+                        } else 
+                            $('#ART' + i).append($("<article class='media'>")
+                                .append($("<div class='media-content' id='mediacont" + i + "'>")
+                                    .append($("<div class='field'>")
+                                        .append("<p class='content is-small is-italic'>Aby móc dodawać komentarze, musisz się zalogować.</p>")
+                                    )
+                                )
+                            );
+                        var koment = "";
+                        if (arrobj[i].comments[0] != null) {
+                            for (y = 0; y < arrobj[i].comments.length; y++) {
+                                var nazwa_uzytkownika = arrobj[i].comments[y].user;
+                                var tresc_komentarza = arrobj[i].comments[y].kom_tresc;
+                                var data = arrobj[i].comments[y].data_dodania;
+                                var kom_id = arrobj[i].comments[y].id_komentarza;
+                                if (uprawnienia == 2)
+                                    koment += "<article class='media'><div class='media-content'><div class='content'><p><strong>" + nazwa_uzytkownika +
+                                        " </strong><small>" + data + "</small><br/>" + tresc_komentarza + "</p></div></div>" +
+                                        "<div class='media-right'><button class='delete' onclick = 'usunKomentarz(" + kom_id + ")'></button><div></article>";
+                                else 
+                                    koment += "<article class='media'><div class='media-content'><div class='content'><p><strong>" + nazwa_uzytkownika +
+                                        " </strong><small>" + data + "</small><br/>" + tresc_komentarza + "</p></div></div>" +
+                                        "<div class='media-right'><div></article>";
+                            }
+                            $('#ART' + i).append(koment);
+
+                        }
+                        $('#ART' + i).wrap($("<section class='section'>"));
+                    }
+                }
+            }
         }
+
         function Rejestracja() {
             ajaxNumerStrony(5);
             $('#contentStrony').empty();
@@ -279,7 +366,42 @@
                 alert(response.d);
             }
         }
-
+        function nowyKomentarz(id) {
+      $.ajax({
+            type: "POST",
+            url: "index.aspx/SprawdzenieSesji",
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: OnSuccess
+            });
+            function OnSuccess(response) {
+                zawartosc = $('#com' + id).val();
+                $.ajax({
+                    type: "POST",
+                    url: "index.aspx/DodanieKomentarza",
+                    data: '{"content":"' + zawartosc + '", "username":"' + response.d[0] + '", "article_id":"' + id + '"}',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: OnSuccess2
+                });
+                function OnSuccess2(response) {
+                    location.reload();
+                }
+            }
+        }
+        function usunKomentarz(id_komentarza) {
+            $.ajax({
+                    type: "POST",
+                    url: "index.aspx/UsuwanieKomentarza",
+                    data: '{"com_id":"' + id_komentarza + '"}',
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: OnSuccess
+            });
+            function OnSuccess() {
+                location.reload();
+            }
+        }
     </script>
 </head>
 <body>
@@ -312,59 +434,6 @@
   </ul>
 </div>
             <section class="content" id="contentStrony">
-                <div class='button is-info' onclick='nowyNews()'>Nowy artykuł...</div>
-                <section class="section">
-    <div class="container">
-      <h2 class="title"><a class="delete"></a> News #1</h2>
-      <h5 class="subtitle">
-        Przykładowy news na tej stronie.
-      </h5>
-        <nav class="level">
-            <div class="level-left">
-            <div class="level-item">
-                <figure class ="image is-128x128 artIMG">
-                <img src="http://tremendouswallpapers.com/wp-content/uploads/2015/07/Two-moons-hd-wallpaper-for-background-image-hd-wallpaper-640x480-11-542310e71510d-2794.jpg" />
-                </figure>
-            </div>
-            <div class="level-item">
-                <figure class ="image is-128x128 artIMG">
-                <img src="http://tremendouswallpapers.com/wp-content/uploads/2015/07/Two-moons-hd-wallpaper-for-background-image-hd-wallpaper-640x480-11-542310e71510d-2794.jpg" />
-                </figure>
-            </div>
-            </div>
-        </nav>
-        <p>xxxxxxxxxxxxxxxxx</p>
-        <article class="media">
-             <div class="media-content">
-    <div class="field">
-      <p class="control">
-        <textarea class="textarea"></textarea>
-      </p>
-    </div>
-    <div class="field">
-      <p class="control">
-        <button class="button is-info">Napisz komentarz</button>
-      </p>
-    </div>
-  </div>
-        </article>
-        <article class="media">
-             <div class="media-content">
-    <div class="content">
-      <p>
-        <strong>user</strong> <small>09.09.2009</small>
-        <br>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ornare magna eros, eu pellentesque tortor vestibulum ut. Maecenas non massa sem. Etiam finibus odio quis feugiat facilisis.
-      </p>
-    </div>
-</div>
-            <div class="media-right">
-    <button class="delete"></button>
-  </div>
-
-        </article>
-    </div>
-  </section>
 </section>
          </section>
 
